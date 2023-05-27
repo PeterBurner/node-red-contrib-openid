@@ -181,7 +181,8 @@ module.exports = function (RED) {
 
     this.on('input', (msg) => {
       // Refresh the access token if expired
-      const expires_at = this.openid.credentials.expires_at;
+      const credentials = RED.nodes.getCredentials(n.openid);
+      const expires_at = credentials.expires_at;
       const now = new Date();
       now.setSeconds(now.getSeconds() + 30);
       const current_time = Math.floor(now.getTime() / 1000);
@@ -192,17 +193,16 @@ module.exports = function (RED) {
           shape: 'dot',
           text: 'openid.status.refreshing'
         });
-        const refresh_token = this.openid.credentials.refresh_token;
-        const oidcClient = new issuer.Client(this.openid.credentials);
+        const refresh_token = credentials.refresh_token;
+        const oidcClient = new issuer.Client(credentials);
         tokenPromise = oidcClient.refresh(refresh_token).then((tokenSet) => {
-          this.openid.credentials.id_token =
-            tokenSet.id_token || this.openid.credentials.id_token;
-          this.openid.credentials.refresh_token =
-            tokenSet.refresh_token || this.openid.credentials.refresh_token;
-          this.openid.credentials.access_token =
-            tokenSet.access_token || this.openid.credentials.access_token;
-          this.openid.credentials.expires_at = tokenSet.expires_at;
-          RED.nodes.addCredentials(this.id, this.openid.credentials);
+          credentials.id_token = tokenSet.id_token || credentials.id_token;
+          credentials.refresh_token =
+            tokenSet.refresh_token || credentials.refresh_token;
+          credentials.access_token =
+            tokenSet.access_token || credentials.access_token;
+          credentials.expires_at = tokenSet.expires_at;
+          RED.nodes.addCredentials(this.id, credentials);
         });
       }
 
@@ -214,7 +214,7 @@ module.exports = function (RED) {
             text: 'openid.status.authenticated'
           });
 
-          msg.access_token = this.openid.credentials.access_token;
+          msg.access_token = credentials.access_token;
           const headers = msg.headers || {};
           headers['Authorization'] = `Bearer ${msg.access_token}`;
           msg.headers = headers;
