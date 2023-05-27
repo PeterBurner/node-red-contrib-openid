@@ -11,7 +11,8 @@
       "client_secret": "Client secret",
       "scopes": "Scopes",
       "authenticate": "Authenticate",
-      "displayName": "Display name"
+      "displayName": "Display name",
+      "challenge": "Use SHA-256 code challenge"
     },
     "tip": {
       "redirect": "<p>Please configure the authorized <b>Redirect URIs</b> of your app to include the following url:</p>\n<code>__callback__</code>"

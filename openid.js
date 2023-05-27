@@ -18,6 +18,7 @@ module.exports = function (RED) {
   'use strict';
 
   const Issuer = require('openid-client').Issuer;
+  const Generators = require('openid-client').generators;
   const crypto = require('crypto');
 
   function OpenIDNode(n) {
@@ -59,6 +60,9 @@ module.exports = function (RED) {
       req.query.scopes.trim() !== ''
         ? req.query.scopes.trim()
         : 'openid email offline_access';
+    const challenge = req.query.challenge === 'on';
+    const code_verifier = Generators.codeVerifier();
+    const code_challenge = Generators.codeChallenge(code_verifier);
 
     Issuer.discover(discovery_url).then(
       (issuer) => {
@@ -72,7 +76,9 @@ module.exports = function (RED) {
           redirect_uri,
           scope: scopes,
           state: `${node_id}:${csrf_token}`,
-          access_type: 'offline'
+          access_type: 'offline',
+          code_challenge: challenge ? code_challenge : undefined,
+          code_challenge_method: challenge ? 'S256' : 'plain'
         });
         res.cookie('csrf', csrf_token);
         res.redirect(authorization_url);
@@ -82,7 +88,8 @@ module.exports = function (RED) {
           client_secret,
           scopes,
           redirect_uri,
-          csrf_token
+          csrf_token,
+          code_verifier: challenge ? code_verifier : undefined
         });
       },
       (err) => {
@@ -114,7 +121,15 @@ module.exports = function (RED) {
       (issuer) => {
         const client = new issuer.Client(credentials);
         client
-          .callback(credentials.redirect_uri, { code: req.query.code })
+          .callback(
+            credentials.redirect_uri,
+            {
+              code: req.query.code
+            },
+            {
+              code_verifier: credentials.code_verifier
+            }
+          )
           .then(
             (tokenSet) => {
               const claims = tokenSet.claims();

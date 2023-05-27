@@ -50,6 +50,12 @@
       <input type="text" placeholder="openid email offline_access" id="node-config-input-scopes">
     </div>
     <div class="form-row">
+      <label for="node-config-input-challenge">
+        <i class="fa fa-key"></i> <span data-i18n="openid.label.challenge"></span>
+      </label>
+      <input type="checkbox" id="node-config-input-challenge">
+    </div>
+    <div class="form-row">
       <label>&nbsp;</label>
       <a class="btn" id="node-config-start-auth" href="#" target="_blank"><span data-i18n="openid.label.authenticate"></span></a>
     </div>
@@ -129,6 +135,10 @@
           'change keydown paste input',
           updateOpenIDAuthButton
         );
+        $('#node-config-input-challenge').on(
+          'change keydown paste input',
+          updateOpenIDAuthButton
+        );
 
         function updateOpenIDDisplayName(dn) {
           $('#node-config-openid-client-keys').hide();
@@ -168,6 +178,7 @@
           var clientId = $('#node-config-input-clientId').val();
           var clientSecret = $('#node-config-input-clientSecret').val();
           var scopes = $('#node-config-input-scopes').val();
+          var challenge = $('#node-config-input-challenge').val();
           var url =
             'openid-credentials/auth?id=' +
             id +
@@ -180,7 +191,9 @@
             '&scopes=' +
             scopes +
             '&callback=' +
-            encodeURIComponent(redirect || callback);
+            encodeURIComponent(redirect || callback) +
+            '&challenge=' +
+            challenge;
           $(this).attr('href', url);
           window.openidConfigNodeIntervalId = window.setTimeout(
             pollOpenIDCredentials,
