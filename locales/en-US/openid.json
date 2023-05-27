@@ -6,6 +6,7 @@
       "openid": "OpenID",
       "config": "OpenID configuration",
       "discovery_url": "Discovery",
+      "redirect_uri": "Redirect URI",
       "client_id": "Client Id",
       "client_secret": "Client secret",
       "scopes": "Scopes",
