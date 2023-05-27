@@ -124,7 +124,8 @@ module.exports = function (RED) {
           .callback(
             credentials.redirect_uri,
             {
-              code: req.query.code
+              code: req.query.code,
+              iss: req.query.iss
             },
             {
               code_verifier: credentials.code_verifier
