@@ -20,7 +20,7 @@
     "status": {
       "refreshing": "refreshing",
       "failed": "failed",
-      "error": "error"
+      "authenticated": "authenticated"
     },
     "warn": {
       "missing-credentials": "Missing OpenID credentials"

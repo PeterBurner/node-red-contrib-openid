@@ -185,7 +185,7 @@ module.exports = function (RED) {
       const now = new Date();
       now.setSeconds(now.getSeconds() + 30);
       const current_time = Math.floor(now.getTime() / 1000);
-      let token_is_valid = Promise.resolve();
+      let tokenPromise = Promise.resolve();
       if (current_time > expires_at) {
         this.status({
           fill: 'blue',
@@ -194,44 +194,42 @@ module.exports = function (RED) {
         });
         const refresh_token = this.openid.credentials.refresh_token;
         const oidcClient = new issuer.Client(this.openid.credentials);
-        token_is_valid = oidcClient.refresh(refresh_token).then(
-          (tokenSet) => {
-            this.openid.credentials.id_token =
-              tokenSet.id_token || this.openid.credentials.id_token;
-            this.openid.credentials.refresh_token =
-              tokenSet.refresh_token || this.openid.credentials.refresh_token;
-            this.openid.credentials.access_token =
-              tokenSet.access_token || this.openid.credentials.access_token;
-            this.openid.credentials.expires_at = tokenSet.expires_at;
-            RED.nodes.addCredentials(this.id, this.openid.credentials);
-            return Promise.resolve();
-          },
-          (err) => {
-            this.error(
-              RED._('openid.error.refresh-failed', { err: JSON.stringify(err) })
-            );
-            this.status({
-              fill: 'red',
-              shape: 'ring',
-              text: 'openid.status.failed'
-            });
-            msg.payload = err;
-            msg.error = err;
-            this.send(msg);
-            return Promise.reject(err);
-          }
-        );
+        tokenPromise = oidcClient.refresh(refresh_token).then((tokenSet) => {
+          this.openid.credentials.id_token =
+            tokenSet.id_token || this.openid.credentials.id_token;
+          this.openid.credentials.refresh_token =
+            tokenSet.refresh_token || this.openid.credentials.refresh_token;
+          this.openid.credentials.access_token =
+            tokenSet.access_token || this.openid.credentials.access_token;
+          this.openid.credentials.expires_at = tokenSet.expires_at;
+          RED.nodes.addCredentials(this.id, this.openid.credentials);
+        });
       }
 
-      token_is_valid.then(() => {
-        delete msg.error;
-        msg.access_token = this.openid.credentials.access_token;
-        const headers = msg.headers || {};
-        headers['Authorization'] = `Bearer ${msg.access_token}`;
-        msg.headers = headers;
-        this.status({});
-        this.send(msg);
-      });
+      tokenPromise
+        .then(() => {
+          this.status({
+            fill: 'green',
+            shape: 'dot',
+            text: 'openid.status.authenticated'
+          });
+
+          msg.access_token = this.openid.credentials.access_token;
+          const headers = msg.headers || {};
+          headers['Authorization'] = `Bearer ${msg.access_token}`;
+          msg.headers = headers;
+          this.send(msg);
+        })
+        .catch((err) => {
+          this.error(
+            RED._('openid.error.refresh-failed', { err: JSON.stringify(err) })
+          );
+          this.status({
+            fill: 'red',
+            shape: 'ring',
+            text: 'openid.status.failed'
+          });
+        });
     });
   }
   RED.nodes.registerType('openid', OpenIDRequestNode);
