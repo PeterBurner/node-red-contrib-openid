@@ -196,7 +196,12 @@ module.exports = function (RED) {
         const oidcClient = new issuer.Client(this.openid.credentials);
         token_is_valid = oidcClient.refresh(refresh_token).then(
           (tokenSet) => {
-            this.openid.credentials.access_token = tokenSet.access_token;
+            this.openid.credentials.id_token =
+              tokenSet.id_token || this.openid.credentials.id_token;
+            this.openid.credentials.refresh_token =
+              tokenSet.refresh_token || this.openid.credentials.refresh_token;
+            this.openid.credentials.access_token =
+              tokenSet.access_token || this.openid.credentials.access_token;
             this.openid.credentials.expires_at = tokenSet.expires_at;
             RED.nodes.addCredentials(this.id, this.openid.credentials);
             return Promise.resolve();
